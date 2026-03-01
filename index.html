@@ -25,6 +25,7 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid; }
     html { -webkit-text-size-adjust: 100%; line-height: 1.5; }
@@ -728,6 +729,12 @@
 </footer>
 
 <script>
+// ── Supabase 초기화 ──
+const _supabase = supabase.createClient(
+  'https://eqwbhkhrhquiesqkvmsd.supabase.co',
+  'sb_publishable_cRHcDa9mRDGhDXmTAaTFeQ_SJ9aXiAd'
+);
+
 // ── 0. 모달 ──
 const modal = document.getElementById('apply-modal');
 const applyForm = document.getElementById('apply-form');
@@ -747,16 +754,36 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-function submitForm(e) {
+async function submitForm(e) {
   e.preventDefault();
   const name = document.getElementById('f-name').value.trim();
   const phone = document.getElementById('f-phone').value.trim();
   const business = document.getElementById('f-business').value;
+  const situation = document.getElementById('f-situation').value.trim();
   if (!name || !phone || !business) {
     alert('이름, 연락처, 업종은 필수 항목입니다.');
     return;
   }
-  // 제출 완료 화면으로 전환
+
+  // 버튼 로딩 상태
+  const submitBtn = applyForm.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = '저장 중...';
+  submitBtn.disabled = true;
+
+  const { error } = await _supabase
+    .from('consultations')
+    .insert({ name, phone, business, situation: situation || null });
+
+  submitBtn.textContent = originalText;
+  submitBtn.disabled = false;
+
+  if (error) {
+    alert('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    console.error(error);
+    return;
+  }
+
   applyForm.style.display = 'none';
   applySuccess.style.display = 'block';
 }
